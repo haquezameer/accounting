@@ -20,5 +20,14 @@ module.exports = {
       "default": "ToDo",
       "required": 1
     }
+  ],
+  layout: [
+    {
+      columns: [
+        {
+          fields: ["kanbanName","referencedoctype"]
+        }
+      ]
+    }
   ]
 };
