@@ -4,6 +4,7 @@ import coreRoutes from 'frappejs/ui/routes';
 
 import Report from 'frappejs/ui/pages/Report';
 import reportViewConfig from '../../reports/view';
+import KanbanTable from '../components/KanbanTable';
 
 import DataImport from '../pages/DataImport';
 
@@ -14,7 +15,7 @@ const routes = [].concat(coreRoutes, [
     path: '/report/:reportName',
     name: 'Report',
     component: Report,
-    props: (route) => {
+    props: route => {
       const { reportName } = route.params;
       return {
         reportName,

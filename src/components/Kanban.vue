@@ -1,6 +1,6 @@
 <template>
 <div class="kanban-container">
-    <form @submit.prevent="onSubmit">
+    <!-- <form @submit.prevent="onSubmit">
       <select v-model="doctype" name="doctype" id="doctype">
         <option value="ToDo">Todo</option>
         <option value="Party">Party</option>
@@ -11,7 +11,7 @@
       <input type="submit" />
       {{doctype}}
       {{field}}
-    </form>
+    </form> -->
 <kanban-board v-if="doctype==='ToDo'" :doctype="doctype" :lists="lists" @update="updateItem" @drag-start="dragstart" 
 @dropped="drophandler" @dragging="dragover" />
 </div>
@@ -32,13 +32,17 @@ export default {
       lists: {},
       draggedItem: '',
       doctype: '',
-      field: ''
+      field: '',
+      kanbanList: []
     };
   },
   computed: {
     meta() {
       return frappe.getMeta('ToDo');
     }
+  },
+  created() {
+    this.updateKanbanList();
   },
   methods: {
     dragstart: function(e) {
@@ -137,6 +141,11 @@ export default {
       console.log(this.doctype, this.field);
       if (this.doctype === 'ToDo') this.updateListsForTodos();
       else if (this.doctype === 'Party') this.updateListsForParty();
+    },
+    async updateKanbanList() {
+      const allKanbans = await frappe.db.getAll({ doctype: 'Kanban' });
+      this.kanbanList = allKanbans;
+      console.log(this.kanbanList);
     }
   }
 };
