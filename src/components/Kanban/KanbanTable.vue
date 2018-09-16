@@ -8,7 +8,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr v-for="board in kanbanBoards" :key="board['name']">
+      <tr v-for="board in kanbanBoards" :key="board['name']" @click="editKanban" :boardname="board['name']">
         <td v-for="(column, key) in columns" :key="key">
           {{board[column['field']]}}
         </td>
@@ -23,8 +23,18 @@ import frappe from 'frappejs';
 export default {
   name: 'KanbanTable',
   async created() {
-    const kanbanBoards = await frappe.db.getAll({ doctype: 'Kanban' });
+    const kanbanBoards = await frappe.db.getAll({
+      doctype: 'Kanban',
+      fields: ['name', ...this.meta.keywordFields]
+    });
     this.kanbanBoards = kanbanBoards;
+    console.log(this.kanbanBoards);
+    console.log(this.meta);
+  },
+  computed: {
+    meta() {
+      return frappe.getMeta('Kanban');
+    }
   },
   data() {
     return {
@@ -40,6 +50,12 @@ export default {
       if (!value) return '';
       value = value.toString();
       return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+  },
+  methods: {
+    editKanban(e) {
+      const name = e.currentTarget.getAttribute('boardname');
+      this.$router.push(`/Kanban/${name}`);
     }
   }
 };
@@ -63,6 +79,11 @@ th {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+tr:hover {
+  cursor: pointer;
+  border: 1px solid #6c757d;
 }
 
 td {
