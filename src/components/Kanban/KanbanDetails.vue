@@ -10,6 +10,11 @@
               {{option}}
             </option>
           </select>
+          <div v-if="field.fieldname === 'lists'">
+            <div v-for="(list,key) in configdata['lists']" :key="key">
+              {{list.listname}}
+            </div>
+          </div>
         </label>
       </div>
       <div>
@@ -32,7 +37,8 @@ export default {
       configdata: {
         kanbanname: '',
         referencedoctype: '',
-        sortby: ''
+        sortby: '',
+        lists: []
       },
       doc: null
     };
@@ -55,6 +61,7 @@ export default {
       return frappe.getMeta(this.doctype);
     },
     fields() {
+      console.log(this.meta.fields);
       return this.meta.fields;
     },
     disabled() {
@@ -74,17 +81,15 @@ export default {
     doc.then(data => {
       console.log(data);
       Object.keys(this.configdata).forEach(
-        field => (this.configdata[field] = data[0][field])
+        field => (this.configdata[field] = data[field])
       );
       console.log(this.configdata);
     });
   },
   methods: {
     async getDetails() {
-      const filters = {
-        name: this.name
-      };
-      const doc = await frappe.db.getAll({ doctype: this.doctype, filters });
+      const doc = await frappe.getDoc(this.doctype, this.name);
+      console.log('doc', doc);
       this.doc = doc;
       return doc;
     },
