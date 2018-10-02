@@ -1,5 +1,5 @@
 <template>
-<table class="datatable-wrapper">
+  <table class="datatable-wrapper">
     <thead>
       <tr>
         <th v-for="column in columns" :key="column['name']">
@@ -12,6 +12,7 @@
         <td v-for="(column, key) in columns" :key="key">
           {{board[column['field']]}}
         </td>
+        <td @click="showKanban($event,board.name)">Show Kanban</td>
       </tr>
     </tbody>
   </table>
@@ -56,6 +57,11 @@ export default {
     editKanban(e) {
       const name = e.currentTarget.getAttribute('boardname');
       this.$router.push(`/Kanban/${name}`);
+    },
+    showKanban(e, name) {
+      e.stopPropagation();
+      console.log('name', name);
+      this.$router.push(`/Kanban/view/${name}`);
     }
   }
 };

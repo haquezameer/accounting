@@ -51,6 +51,7 @@ export default {
       const options = [];
       if (this.configdata.referencedoctype) {
         const refdoctypemeta = frappe.getMeta(this.configdata.referencedoctype);
+        console.log(refdoctypemeta);
         refdoctypemeta.fields.forEach(field => {
           if (field.fieldtype === 'Select') options.push(field.fieldname);
         });

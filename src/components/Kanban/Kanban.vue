@@ -1,151 +1,129 @@
 <template>
-<div class="kanban-container">
-    <!-- <form @submit.prevent="onSubmit">
-      <select v-model="doctype" name="doctype" id="doctype">
-        <option value="ToDo">Todo</option>
-        <option value="Party">Party</option>
-      </select>
-      <select v-model="field" name="field">
-        <option value="status">Status</option>
-      </select>
-      <input type="submit" />
-      {{doctype}}
-      {{field}}
-    </form> -->
-<kanban-board v-if="doctype==='ToDo'" :doctype="doctype" :lists="lists" @update="updateItem" @drag-start="dragstart" 
-@dropped="drophandler" @dragging="dragover" />
-</div>
+  <div v-if="kanban !== null" class="kanban-container">
+    <div class="kanban-list" v-for="list in kanban.lists" :id="list.listname" :key="list.listname" v-on:dragover="dragover" v-on:drop="drophandler">
+      <div class="list-name">
+        {{list.listname | capitalize}}
+        <div v-for="card in cards" :key="card.cardtitle">
+          <div v-if="card.listname === list.listname" :name="card.name" class="card-item" draggable="true" v-on:dragstart="dragstart">
+            <span class="card-title">{{card.cardtitle}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
 import frappe from 'frappejs';
-import KanbanBoard from './KanbanBoard.vue';
 import Vue from 'vue';
 
 export default {
   name: 'Kanban',
-  components: {
-    KanbanBoard
-  },
+  // components: {
+  //   KanbanBoard
+  // },
   data: function() {
     return {
-      lists: {},
-      draggedItem: '',
-      doctype: '',
-      field: '',
-      kanbanList: []
+      kanban: null,
+      draggedItemName: '',
+      doctype: 'Kanban',
+      cards: []
     };
   },
   computed: {
-    meta() {
-      return frappe.getMeta('ToDo');
+    name() {
+      return this.$route.params.name;
+    },
+    cardmeta() {
+      return frappe.getMeta('KanbanCard');
+    },
+    fields() {
+      return this.cardmeta.fields.map(field => field.fieldname);
+    }
+  },
+  filters: {
+    capitalize(value) {
+      if (!value) return '';
+      value = value.toString();
+      return value.charAt(0).toUpperCase() + value.slice(1);
     }
   },
   created() {
-    this.updateKanbanList();
+    this.initKanbanBoard();
   },
   methods: {
     dragstart: function(e) {
+      console.log(e);
       e.dataTransfer.effectAllowed = 'move';
       let attribute, draggedItemName;
-      if (e.target.getAttribute('subject')) {
-        draggedItemName = e.target.getAttribute('subject');
-        console.log('draggedItemName: ', draggedItemName);
-        attribute = 'subject';
-      } else {
-        if (e.target.getAttribute('name')) {
-          draggedItemName = e.target.getAttribute('name');
-          attribute = 'name';
-        }
-      }
-      let draggedItem;
-      var currentLists = this.lists,
-        list;
-      for (list in currentLists) {
-        draggedItem = currentLists[list].find(
-          item => item[attribute] === draggedItemName
-        );
-        if (typeof draggedItem !== 'undefined') {
-          break;
-        }
-      }
-      Object.keys(currentLists).map(list => {
-        currentLists[list] = currentLists[list].filter(
-          item => item[attribute] !== draggedItemName
-        );
-      });
-      this.lists = Object.assign({}, currentLists);
-      this.draggedItem = draggedItem;
+      draggedItemName = e.target.getAttribute('name');
+      this.draggedItemName = draggedItemName;
+      console.log(this.draggedItemName);
+      // attribute = 'subject';
+      // } else {
+      //   if (e.target.getAttribute('name')) {
+      //     draggedItemName = e.target.getAttribute('name');
+      //     attribute = 'name';
+      //   }
+      // }
+      // let draggedItem;
+      // var currentLists = this.lists,
+      //   list;
+      // for (list in currentLists) {
+      //   draggedItem = currentLists[list].find(
+      //     item => item[attribute] === draggedItemName
+      //   );
+      //   if (typeof draggedItem !== 'undefined') {
+      //     break;
+      //   }
+      // }
+      // Object.keys(currentLists).map(list => {
+      //   currentLists[list] = currentLists[list].filter(
+      //     item => item[attribute] !== draggedItemName
+      //   );
+      // });
+      // this.lists = Object.assign({}, currentLists);
+      // this.draggedItem = draggedItem;
     },
     drophandler: function(e) {
-      const dropDestination = e.target.id;
-      const draggedItem = this.draggedItem;
-      this.lists[dropDestination].push(draggedItem);
-      console.log(this.lists);
-      this.updateItem(draggedItem, dropDestination);
+      const destinationListName = e.target.id;
+      // const draggedItemN = this.draggedItem;
+      const draggedItem = this.cards.filter(
+        card => card.name === this.draggedItemName
+      )[0];
+      draggedItem.listname = destinationListName;
+      this.updateItem(destinationListName);
     },
     dragover: function(e) {
       e.preventDefault();
     },
-    async updateListsForTodos() {
-      const all = await frappe.db.getAll({
-        doctype: this.doctype,
-        fields: ['name', ...this.meta.keywordFields, 'status']
-      });
-      const Open = all.filter(item => item.status === 'Open');
-      const Closed = all.filter(item => item.status === 'Closed');
-      this.lists = Object.assign({});
-      this.lists.Open = Open;
-      this.lists.Closed = Closed;
-      console.log('this.lists: ', this.lists);
-    },
-    async updateListsForParty() {
-      console.log('fetching party items');
-      const all = await frappe.db.getAll({
-        doctype: this.doctype,
-        fields: ['name', 'customer', 'supplier']
-      });
-      console.log(all);
-      const customer = all.filter(item => item.customer === 1);
-      const supplier = all.filter(item => item.supplier === 1);
-      console.log(customer, supplier);
-      this.lists = Object.assign({});
-      this.lists.customer = customer;
-      this.lists.supplier = supplier;
-      console.log(this.lists);
-    },
-    async updateItem(draggedItem, dropDestination) {
-      const CLOSED = 'Closed',
-        OPEN = 'Open',
-        CUSTOMER = 'customer',
-        SUPPLIER = 'supplier';
-      switch (dropDestination) {
-        case CLOSED:
-        case OPEN:
-          draggedItem = await frappe.getDoc('ToDo', draggedItem.name);
-          draggedItem.status = dropDestination;
-          break;
-        case CUSTOMER:
-        case SUPPLIER:
-          draggedItem = await frappe.getDoc('Party', draggedItem.name);
-          draggedItem[dropDestination] = 1;
-          if (dropDestination === 'customer') draggedItem.supplier = null;
-          else draggedItem.customer = null;
-          break;
-        default:
-          console.log('nothing matched');
-      }
-      draggedItem.update();
+    async updateItem(destinationListName) {
+      console.log(this.draggedItemName);
+      const sourceItem = await frappe.getDoc(
+        'KanbanCard',
+        this.draggedItemName
+      );
+      sourceItem.listname = destinationListName;
+      sourceItem.update();
     },
     onSubmit: function() {
       console.log(this.doctype, this.field);
       if (this.doctype === 'ToDo') this.updateListsForTodos();
       else if (this.doctype === 'Party') this.updateListsForParty();
     },
-    async updateKanbanList() {
-      const allKanbans = await frappe.db.getAll({ doctype: 'Kanban' });
-      this.kanbanList = allKanbans;
-      console.log(this.kanbanList);
+    async initKanbanBoard() {
+      const kanban = await frappe.getDoc(this.doctype, this.name);
+      this.kanban = kanban;
+      this.getCards(kanban.name);
+    },
+    async getCards(boardname) {
+      const allCards = await frappe.db.getAll({
+        doctype: 'KanbanCard',
+        filters: { boardname },
+        fields: [...this.fields, 'name']
+      });
+      this.cards = allCards;
+      console.log(this.cards);
     }
   }
 };
@@ -170,5 +148,32 @@ a {
   display: flex;
   margin: 0 auto;
   justify-content: space-around;
+}
+.kanban-list {
+  margin: 1rem 0;
+  border-radius: 5px;
+  min-height: 400px;
+  min-width: 300px;
+  background-color: #e8ebed;
+  box-shadow: -1px 1px 16px -3px rgba(0, 0, 0, 0.75);
+}
+.list-name {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+.card-item {
+  background: #fff;
+  margin: 0.5rem;
+  padding: 1rem;
+  border-radius: 5px;
+}
+.card-item:hover {
+  box-shadow: -1px 10px 12px -7px rgba(0, 0, 0, 0.75);
+}
+.card-title {
+  color: #2066d6;
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 </style>

@@ -6,6 +6,7 @@ import Report from 'frappejs/ui/pages/Report';
 import reportViewConfig from '../../reports/view';
 import KanbanTable from '../components/Kanban/KanbanTable';
 import KanbanDetails from '../components/Kanban/KanbanDetails';
+import Kanban from '../components/Kanban/Kanban';
 
 import DataImport from '../pages/DataImport';
 
